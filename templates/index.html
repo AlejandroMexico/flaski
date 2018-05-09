@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskCrud</title>
+    <link rel="stylesheet" href="../static/assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/assets/css/styles.css">
+    <script src="../static/assets/js/jquery.min.js"></script>
+    <script src="../static/assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../static/assets/js/knockout-3.4.2.js"></script>
+    <script src="../static/assets/js/socket.io.js"></script>
+</head>
+
+<body>
+
+
+<h1 class="text-center">Mini Notes</h1>
+<div class="panel panel-default" id="main">
+    <div class="panel-heading">
+        <h3 class="panel-title">My Notes</h3></div>
+    <div class="panel-body">
+        <div class="container">
+            <!-- ko foreach: notes -->
+            <div style="display: inline-block" class="panel-tick" data-bind="style: {'background-color': color}">
+                <div class="mpanel-title" style="display: inherit">
+                    <span data-bind="text: noteTitle, style:{'color': fontColor}"
+                          class="panel-title-content pretty-font" style="font-size: 18px">Panel title</span>
+                </div>
+                <div style="display: inherit" id="as" class="mpanel-body" data-bind="style:{'color': fontColor}">
+                    <p data-bind="text: noteBody, style:{'color': fontColor}"
+                       class="panel-body-content pretty-font"
+                       style="font-size: 16px"></p>
+                </div>
+            </div>
+            <!-- /ko -->
+        </div>
+
+    </div>
+</div>
+<button class="btn btn-success col-r" type="button" data-toggle="modal" data-target="#modalPanel">New Mini Note</button>
+<div class="modal fade" role="dialog" tabindex="-1" id="modalPanel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">×</span></button>
+                <h4 class="modal-title">Task Editor</h4></div>
+            <div class="modal-body">
+                <form class="form-horizontal">
+                    <center style="padding: 20px">
+                        <div class="big-panel-tick" id="noteEditor">
+                            <div class="big-panel-title">
+                                <input  id="colorTitle" data-bind="textInput: noteTitle" type="text"
+                                       class="big-panel-title-content pretty-font" style="font-size: 18px"
+                                       placeholder="Title here..."/>
+                            </div>
+                            <div class="big-panel-body">
+                                <textarea id="colorBody" data-bind="textInput: noteBody" placeholder="Content here..."
+                                          class="big-panel-body-content pretty-font" style="font-size: 16px"></textarea>
+                            </div>
+                            <script src="../static/assets/js/autosize.js"></script>
+                            <script>
+                                autosize(document.getElementById('mcontent'));
+                            </script>
+
+                        </div>
+                    </center>
+
+                    <div class="form-group">
+                        <div class="col-sm-3">
+                            <label class="control-label">Color </label>
+                        </div>
+                        <div class="col-sm-9">
+                            <input id="color1" data-bind="value: color" value="#5baeff" type="color"
+                                   onchange="changeBgColor()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            <label class="control-label">Font color</label>
+                        </div>
+                        <div class="col-lg-pull-0 col-md-9">
+                            <input data-bind="value: fontColor" type="color" id="color2" onchange="changeFontColor()"
+                                   value="#ffffff">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" type="button" data-dismiss="modal">Close</button>
+                <button class="btn btn-primary" data-bind="click: addNote()" type="button">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    let changeBgColor = function () {
+        $('#noteEditor')[0].style.backgroundColor = $('#color1')[0].value;
+    };
+
+    let changeFontColor = function () {
+        let col = $('#color2')[0].value.toString();
+        $('#colorTitle')[0].style.color = col;
+        $('#colorBody')[0].style.color = col;
+    };
+
+    let socket = io.connect('http://' + document.domain + ':' + location.port);
+    socket.on('connect', function () {
+        console.log('Connected Successful');
+    });
+    socket.on('notes', function (data) {
+        console.log('Fetched Data: ' + JSON.parse(JSON.stringify(data)));
+        if (data !== undefined) {
+            data = JSON.stringify(data);
+            data = JSON.parse(data);
+            noteViewModel.fetch(data);
+        }
+    });
+
+    socket.on('add note', function (data) {
+        if (data !== undefined) {
+            data = JSON.stringify(data);
+            data = JSON.parse(data);
+            noteViewModel.addNote(data);
+        }
+    });
+
+
+    function NoteViewModel() {
+        let self = this;
+        self.notes = ko.observableArray();
+
+        self.add = function (note) {
+            let data = JSON.stringify(note);
+            socket.send(data);
+        };
+        self.fetch = function (data) {
+            if (self.notes === undefined) {
+                self.notes = ko.observableArray();
+            }
+            self.notes.removeAll();
+            for (let i = 0; i < data.notes.length; i++) {
+                self.notes.push({
+                    uri: ko.observable(data.notes[i].uri),
+                    noteTitle: ko.observable(data.notes[i].title),
+                    noteBody: ko.observable(data.notes[i].body),
+                    color: ko.observable(data.notes[i].color.toString()),
+                    fontColor: ko.observable(data.notes[i].fontColor.toString())
+                });
+            }
+        };
+        self.addNote = function (data) {
+            console.log(data.toString());
+            self.notes.push({
+                uri: ko.observable(data.note.uri),
+                noteTitle: ko.observable(data.note.title),
+                noteBody: ko.observable(data.note.body),
+                color: ko.observable(data.note.color.toString()),
+                fontColor: ko.observable(data.note.fontColor.toString())
+            });
+        };
+
+
+    }
+
+    let colors = [
+        '#FF6F9D',
+        '#FFBA2D',
+        '#80BF34',
+        '#5BB9FF',
+        '#304C7F',
+        '#7663FF',
+        '#3B317F',
+        '#BA66FF',
+        '#5D337F',
+        '#7F2D2A',
+        '#FF5B53',
+        '#FF7633',
+        '#427F35',
+        '#237F59',
+        '#794C7F',
+        '#FF453D',
+        '#7167FF',
+        '#E260FF',
+        '#397F66',
+        '#FF5F5D'
+    ];
+
+    function AddNoteViewModel() {
+        let self = this;
+        self.noteTitle = ko.observable();
+        self.noteBody = ko.observable();
+        self.color = ko.observable();
+        self.fontColor = ko.observable();
+
+        self.addNote = function () {
+            noteViewModel.add({
+                title: self.noteTitle(),
+                body: self.noteBody(),
+                color: self.color(),
+                fontColor: self.fontColor()
+            });
+            $('#modalPanel').modal('hide');
+            self.noteTitle("");
+            self.noteBody("");
+            self.color(colors[Math.floor(Math.random() * colors.length)]);
+            self.fontColor("#FFFFFF");
+            changeBgColor();
+        }
+    }
+
+
+    noteViewModel = new NoteViewModel();
+    addNoteViewModel = new AddNoteViewModel();
+    ko.applyBindings(noteViewModel, document.getElementById('main'));
+    ko.applyBindings(addNoteViewModel, document.getElementById('modalPanel'));
+</script>
+</body>
+
+</html>
