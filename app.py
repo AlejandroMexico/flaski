@@ -1,11 +1,10 @@
 import os
 
 from flask import Flask, render_template, request, url_for
-from flask.json import jsonify
-from flask_cors import CORS
+
 from pandas._libs import json
 
-from pandastests import make_conversion
+
 from flask_socketio import SocketIO
 
 app = Flask(__name__)
