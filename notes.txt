@@ -1,1 +1,1 @@
-[{'id': 0, 'title': 'Hello Mini Notes', 'body': 'Hello world of notes', 'color': '#5BAEFF', 'fontColor': '#FFFFFF'}, {'id': 1, 'title': 'My note', 'body': 'Hello notes is awesome', 'color': '#88d2d2', 'fontColor': '#FFFFFF'}, {'id': 2, 'title': 'Hello', 'body': 'Hello', 'color': '#FF5F5D', 'fontColor': '#000000'}]
+[]
